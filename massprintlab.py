@@ -315,10 +315,20 @@ class massprintlab:
         def aux_filter(layer, field, operator, link_lay, link_lay_field):
 
             link_lay_dp = link_lay.dataProvider()
-            linked_layer_field_values = str(link_lay_dp.uniqueValues(
+            if link_lay_dp.featureCount() > 1:
+                linked_layer_field_values = str(link_lay_dp.uniqueValues(
                 link_lay_dp.fieldNameIndex(link_lay_field))).replace('{', '(').replace('}', ')')
+            else:
+                linked_layer_field_index = link_lay_dp.fieldNameIndex(link_lay_field)
+                linked_layer_field_values = \
+                    [feature.attributes()[linked_layer_field_index] for feature in link_lay_dp.getFeatures()][0]
+                if linked_layer_field_values == '':
+                    linked_layer_field_values = "('zero_value')"
+
+            print(f"linked_layer_field_values {linked_layer_field_values}")
             print(f'"{field}" {operator} {linked_layer_field_values}')
             layer.setSubsetString(f'"{field}" {operator} {linked_layer_field_values}')
+
 
 
 
@@ -390,6 +400,7 @@ class massprintlab:
             base_path = self.dlg.lineEdit_saver.text()
             file_ext = format_list[self.dlg.comboBox_saver.currentIndex()]
 
+
             try:
                 os.mkdir(os.path.join(base_path, str(date.today()).replace('-', '_')))
                 write_path = os.path.join(base_path, str(date.today()).replace('-', '_'))
@@ -446,7 +457,6 @@ class massprintlab:
 
                 cur_scale_value = referencemap.scale()
                 cur_scale_value = scale_setter(max_scale, min_scale, cur_scale_value, scale_range)
-
                 referencemap.setScale(cur_scale_value)
                 units_per_segment_value = units_per_segment[
                     np.where((units_per_segment / cur_scale_value >= ruler_min) & \
